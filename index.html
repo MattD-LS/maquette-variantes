@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette</title>
+<style>
+  body { font-family: system-ui, sans-serif; font-size: 14px; color: #222; margin: 24px; }
+  .wrap { overflow-x: auto; }
+  table { border-collapse: collapse; }
+  th, td { border: 1px solid #ddd; padding: 6px 8px; vertical-align: middle; text-align: left; white-space: nowrap; }
+  th { background: #f5f5f5; font-weight: 600; }
+  input, select, button { font: inherit; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
+  input[type="text"] { width: 220px; }
+  input.date { width: 90px; }
+  input.num { width: 70px; }
+  input.ref { width: 110px; }
+  input.price { width: 80px; }
+  input[type="checkbox"] { width: auto; }
+  button { cursor: pointer; }
+  button:hover { background: #f0f0f0; }
+  .img-cell { text-align: center; }
+  .img-cell img { width: 100px; height: 100px; object-fit: cover; background: #eee; display: block; margin: 0 auto 4px; }
+  .img-info { font-size: 12px; color: #666; }
+  .arrows { display: flex; flex-direction: column; gap: 2px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>N°</th>
+        <th>Ordre</th>
+        <th>Titre</th>
+        <th>Masquer titre</th>
+        <th>Type</th>
+        <th>Date</th>
+        <th>Faces</th>
+        <th>Disques</th>
+        <th>Disques DVD</th>
+        <th>Label</th>
+        <th>Distributeur</th>
+        <th>Image</th>
+        <th>Référence</th>
+        <th>Prix</th>
+        <th>Description</th>
+        <th>Supprimer</th>
+        <th>Dupliquer</th>
+      </tr>
+    </thead>
+    <tbody id="body"></tbody>
+  </table>
+</div>
+
+<script>
+const TYPES = ["Album", "Music card", "Autre"];
+const LABELS = ["SM Entertainment", "avex trax", "Autre"];
+const DISTRIBUTORS = ["Kakao Entertainment", "avex music creative", "Autre"];
+
+const titles = [
+  "Photobook Ver. / Dream Ver.",
+  "Photobook Ver. / After Dream Ver.",
+  "Jewel Case Ver. / RENJUN Ver.",
+  "Jewel Case Ver. / JENO Ver.",
+  "Jewel Case Ver. / HAECHAN Ver.",
+  "Jewel Case Ver. / JAEMIN Ver.",
+  "Jewel Case Ver. / CHENLE Ver.",
+  "Jewel Case Ver. / JISUNG Ver.",
+  "SMini Ver. / RENJUN Ver.",
+  "SMini Ver. / JENO Ver.",
+  "SMini Ver. / HAECHAN Ver.",
+  "SMini Ver. / JAEMIN Ver.",
+  "SMini Ver. / CHENLE Ver.",
+  "SMini Ver. / JISUNG Ver.",
+  "Mini Box Ver.",
+  "Special Ver.",
+  "Jewel Case Ver. Japan Exclusive / RENJUN Ver.",
+  "Jewel Case Ver. Japan Exclusive / JENO Ver.",
+  "Jewel Case Ver. Japan Exclusive / HAECHAN Ver.",
+  "Jewel Case Ver. Japan Exclusive / JAEMIN Ver.",
+  "Jewel Case Ver. Japan Exclusive / CHENLE Ver.",
+  "Jewel Case Ver. Japan Exclusive / JISUNG Ver."
+];
+
+function makeRow(title, index) {
+  const japan = title.startsWith("Jewel Case Ver. Japan Exclusive");
+  let ref, price, currency = "₩";
+  if (japan)                              { ref = "AVC1-43723";  price = 3345;  currency = "¥"; }
+  else if (title.startsWith("Photobook")) { ref = "L700001714";  price = 21000; }
+  else if (title.startsWith("Jewel"))     { ref = "L700001715";  price = 14700; }
+  else if (title.startsWith("SMini"))     { ref = "L700001716";  price = 17200; }
+  else if (title.startsWith("Mini Box"))  { ref = "L700001717";  price = 17200; }
+  else                                    { ref = "L700001718";  price = 36700; }
+
+  const card = title.startsWith("SMini") || title.startsWith("Mini Box") || title.startsWith("Special");
+
+  return {
+    title,
+    hideTitle: false,
+    type: card ? "Music card" : "Album",
+    date: "09/11/2026",
+    faces: "",
+    discs: "",
+    dvd: "",
+    label: japan ? "avex trax" : "SM Entertainment",
+    distributor: japan ? "avex music creative" : "Kakao Entertainment",
+    image: "images/" + (index + 1) + ".jpg",
+    ref,
+    price,
+    currency,
+    desc: ""
+  };
+}
+
+let rows = titles.map(makeRow);
+const imageWeights = {}; // cache du poids des images (ko)
+
+const body = document.getElementById("body");
+
+function options(list, selected) {
+  return list.map(o => `<option${o === selected ? " selected" : ""}>${o}</option>`).join("");
+}
+
+function render() {
+  body.innerHTML = "";
+  rows.forEach((r, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td><div class="arrows">
+        <button data-act="up" title="Monter">▲</button>
+        <button data-act="down" title="Descendre">▼</button>
+      </div></td>
+      <td><input type="text" data-f="title" value="${r.title.replace(/"/g, "&quot;")}"></td>
+      <td><input type="checkbox" data-f="hideTitle"${r.hideTitle ? " checked" : ""}></td>
+      <td><select data-f="type">${options(TYPES, r.type)}</select></td>
+      <td><input type="text" class="date" data-f="date" value="${r.date}" placeholder="JJ/MM/AAAA" pattern="\\d{2}/\\d{2}/\\d{4}" maxlength="10"></td>
+      <td><input type="number" class="num" data-f="faces" value="${r.faces}"></td>
+      <td><input type="number" class="num" data-f="discs" value="${r.discs}"></td>
+      <td><input type="number" class="num" data-f="dvd" value="${r.dvd}"></td>
+      <td><select data-f="label">${options(LABELS, r.label)}</select></td>
+      <td><select data-f="distributor">${options(DISTRIBUTORS, r.distributor)}</select></td>
+      <td class="img-cell">
+        <img src="${r.image}" alt="">
+        <div class="img-info">—</div>
+      </td>
+      <td><input type="text" class="ref" data-f="ref" value="${r.ref}"></td>
+      <td><input type="number" class="price" data-f="price" value="${r.price}"> ${r.currency}</td>
+      <td><input type="text" data-f="desc" value="${r.desc}"></td>
+      <td><button data-act="delete">Supprimer</button></td>
+      <td><button data-act="duplicate">Dupliquer</button></td>
+    `;
+
+    // Synchronisation des champs avec les données
+    tr.querySelectorAll("[data-f]").forEach(el => {
+      const f = el.dataset.f;
+      const evt = (el.tagName === "SELECT" || el.type === "checkbox") ? "change" : "input";
+      el.addEventListener(evt, () => {
+        r[f] = el.type === "checkbox" ? el.checked : el.value;
+      });
+    });
+
+    // Actions
+    tr.querySelector('[data-act="up"]').onclick = () => move(i, -1);
+    tr.querySelector('[data-act="down"]').onclick = () => move(i, 1);
+    tr.querySelector('[data-act="delete"]').onclick = () => { rows.splice(i, 1); render(); };
+    tr.querySelector('[data-act="duplicate"]').onclick = () => { rows.splice(i + 1, 0, { ...r }); render(); };
+
+    // Infos image
+    const img = tr.querySelector("img");
+    const info = tr.querySelector(".img-info");
+    img.addEventListener("load", () => {
+      const dims = `${img.naturalWidth}×${img.naturalHeight} px`;
+      info.textContent = dims;
+      getWeight(r.image).then(kb => {
+        info.textContent = dims + (kb !== null ? ` — ${kb} ko` : " — ? ko");
+      });
+    });
+
+    body.appendChild(tr);
+  });
+}
+
+function move(i, delta) {
+  const j = i + delta;
+  if (j < 0 || j >= rows.length) return;
+  [rows[i], rows[j]] = [rows[j], rows[i]];
+  render();
+}
+
+function getWeight(src) {
+  if (src in imageWeights) return Promise.resolve(imageWeights[src]);
+  return fetch(src)
+    .then(res => res.blob())
+    .then(blob => (imageWeights[src] = (blob.size / 1024).toFixed(1)))
+    .catch(() => null);
+}
+
+render();
+</script>
+</body>
+</html>
